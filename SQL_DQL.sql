@@ -6,7 +6,7 @@ GO
 -- creating Department table
 CREATE TABLE Department (
 Num_S INT PRIMARY KEY,
-Label VARCHAR(255),
+Department VARCHAR(255),
 Manager_Name VARCHAR(255)
 );
 
@@ -35,9 +35,12 @@ CREATE TABLE Employee_Project(
 Employee_Num_E INT,
 FOREIGN KEY (Employee_Num_E) REFERENCES Employee(Num_E), 
 Project_Num_P INT,
-FOREIGN KEY (Project_Num_P) REFERENCES Project(Num_P), 
+FOREIGN KEY (Employee_Num_E) REFERENCES Project(Num_P), 
 Role VARCHAR(255)
 );
+ 
+ -- ** DML PART ** --
+
 
 -- Inserting the informations in the tables
 INSERT INTO Department(Num_S,Label,Manager_Name)
@@ -91,4 +94,79 @@ GO
 SELECT * FROM Employee;
 GO
 
+-- ** DQL PART **--
+ 
+USE Checkpoint_DQL;
+GO
 
+
+-- 1/- Retrieve the names of employees who are assigned to more than one project,
+-- along with the total number of projects for each employee.
+SELECT Name, COUNT(Project_Num_P) AS total_projects
+FROM Employee
+JOIN Employee_Project
+ON Employee.Num_E = Employee_Project.Employee_Num_E
+GROUP BY Name
+HAVING COUNT(Project_Num_P) > 1;
+
+
+-- 2/- retrieve the list of projects managed by each department, including the department label and manager’s name.
+SELECT 
+  p.Num_P,p.Title,
+  d.Label, d.Manager_Name 
+FROM Project AS p
+JOIN Department AS d  
+ON p.Department_Num_S =d.Num_S 
+
+
+-- 3/- retrieve the names of employees working on the project "Website Redesign," including their roles in the project.
+SELECT e.Name, ep.Role
+FROM Employee AS e
+JOIN Employee_Project AS ep
+ON e.Num_E = ep.Employee_Num_E
+JOIN Project AS p
+ON p.Num_P = ep.Project_Num_P
+WHERE p.Title = 'Website Redesign'
+
+-- 4/- Retrieve the department with the highest number of employees, including the department label, manager name, and the total number of employees.
+SELECT TOP 1 d.Label, d.Manager_Name, COUNT(e.Num_E) AS total_employees
+FROM Department AS d 
+JOIN Employee AS e ON d.Num_S = e.Department_Num_S
+GROUP BY d.Label, d.Manager_Name
+ORDER BY total_employees DESC 
+
+
+-- 5/-  retrieve the names and positions of employees earning a salary greater than 60,000, including their department names.
+SELECT e.Name, e.Position, d.Label 
+FROM Employee AS e 
+JOIN Department AS d  ON d.Num_S = e.Department_Num_S
+WHERE Salary > 60000.00
+
+-- 6/- retrieve the number of employees assigned to each project, including the project title.
+
+SELECT p.Title, 
+       COUNT(ep.Employee_Num_E) AS total_employees -- Count the number of employees assigned to each project
+FROM Project p
+JOIN Employee_Project ep 
+  ON ep.Project_Num_P = p.Num_P -- Link projects to employee assignments via project number
+GROUP BY p.Title -- Group the results by project title to get a count per project
+
+
+-- 7/- retrieve a summary of roles employees have across different projects, including the employee name, project title, and role.
+SELECT e.Name, 
+       p.Title, 
+       ep.Role
+FROM Employee_Project ep -- Start with the associative table containing roles and links
+JOIN Project p
+  ON p.Num_P = ep.Project_Num_P -- Match project numbers between Project and Employee_Project
+JOIN Employee e
+  ON e.Num_E = ep.Employee_Num_E -- Match employee numbers between Employee and Employee_Project
+
+
+  --8/-  retrieve the total salary expenditure for each department, including the department label and manager name.
+  
+  SELECT d.Label, d.Manager_Name, SUM(e.Salary) AS total_salary
+  FROM Employee e
+  Join Department  d 
+    ON d.Num_S = e.Department_Num_S
+  GROUP BY d.Label, d.Manager_Name
